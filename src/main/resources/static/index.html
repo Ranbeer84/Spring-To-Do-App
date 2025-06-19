@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Todo App</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: 40px auto;
+          padding: 20px;
+          background-color: #f2f2f2;
+          border-radius: 10px;
+        }
+
+        h1 {
+          text-align: center;
+          color: #333;
+        }
+
+        form {
+          display: flex;
+          margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+          flex: 1;
+          padding: 10px;
+          font-size: 16px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+        }
+
+        button {
+          padding: 10px 20px;
+          font-size: 16px;
+          margin-left: 10px;
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        button:hover {
+          background-color: #45a049;
+        }
+
+        ul {
+          list-style: none;
+          padding: 0;
+        }
+
+        li {
+          background-color: white;
+          margin-bottom: 10px;
+          padding: 12px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-left: 5px solid #ccc;
+        }
+
+        li.completed {
+          text-decoration: line-through;
+          color: gray;
+          border-left-color: green;
+        }
+
+        .left-section {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .delete-btn {
+          background-color: red;
+          color: white;
+          border: none;
+          padding: 5px 10px;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        .delete-btn:hover {
+          background-color: darkred;
+        }
+    </style>
+</head>
+<body>
+
+<h1>My Todo List</h1>
+
+<form id="todoForm">
+    <input type="text" id="todoTitle" placeholder="Enter todo..." required />
+    <button type="submit">Add</button>
+</form>
+
+<ul id="todoList"></ul>
+
+<script>
+    const apiUrl = 'http://localhost:8080/api/todos';
+
+    // Fetch and display all todos
+    function loadTodos() {
+      fetch(apiUrl)
+        .then(res => res.json())
+        .then(todos => {
+          const list = document.getElementById('todoList');
+          list.innerHTML = '';
+
+          todos.forEach(todo => {
+            const li = document.createElement('li');
+            li.className = todo.completed ? 'completed' : '';
+
+            const leftSection = document.createElement('div');
+            leftSection.className = 'left-section';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = todo.completed;
+
+            checkbox.addEventListener('change', () => {
+              updateTodo(todo.id, {
+                title: todo.title,
+                completed: checkbox.checked
+              });
+            });
+
+            const span = document.createElement('span');
+            span.textContent = todo.title;
+
+            leftSection.appendChild(checkbox);
+            leftSection.appendChild(span);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.addEventListener('click', () => {
+              deleteTodo(todo.id);
+            });
+
+            li.appendChild(leftSection);
+            li.appendChild(deleteBtn);
+            list.appendChild(li);
+          });
+        });
+    }
+
+    // Add new todo
+    document.getElementById('todoForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const title = document.getElementById('todoTitle').value;
+
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, completed: false })
+      }).then(() => {
+        document.getElementById('todoTitle').value = '';
+        loadTodos();
+      });
+    });
+
+    // Update a todo
+    function updateTodo(id, data) {
+      fetch(`${apiUrl}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(() => loadTodos());
+    }
+
+    // Delete a todo
+    function deleteTodo(id) {
+      fetch(`${apiUrl}/${id}`, {
+        method: 'DELETE'
+      }).then(() => loadTodos());
+    }
+
+    // Initial load
+    loadTodos();
+</script>
+
+</body>
+</html>
